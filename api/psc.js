@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'API key not configured in environment'+apiKey });
     }
 
-    const endpoint = `https://api.company-information.service.gov.uk/company/${companyNumber}/persons-with-significant-control`;
+    const endpoint = 'https://api.company-information.service.gov.uk/company/${companyNumber}/persons-with-significant-control';
     const headers = {
       Authorization: 'Basic ' + Buffer.from(apiKey + ':').toString('base64')
     };
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     const response = await fetch(endpoint, { headers });
 
     if (!response.ok) {
-      console.error('Companies House error: ${response.statusText}');
+      console.error('Companies House error is ',response.statusText);
       return res.status(response.status).json({ error: 'Companies House API error' });
     }
 
