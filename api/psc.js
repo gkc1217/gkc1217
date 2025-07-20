@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     if (!companyNumber) {
       return res.status(400).json({ error: 'Company number is required' });
     }
-
+    console.error('companyNumber is  ',companyNumber);
     const apiKey = process.env.CH_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: 'API key not configured in environment'+apiKey });
