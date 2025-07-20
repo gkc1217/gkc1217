@@ -1,6 +1,6 @@
 function fetchShareholders() {
   const companyNumber = document.getElementById("companyInput").value;
-  fetch('/api/psc?companyNumber=${companyNumber}')
+  fetch('/api/psc?companyNumber='+companyNumber)
     .then(res => res.json())
     .then(data => renderChart(data.items))
     .catch(err => console.error("Client error:", err));
@@ -29,7 +29,7 @@ function renderChart(pscs) {
     if (psc.links?.self) {
       const link = document.createElement("a");
       link.href = baseUrl + psc.links.self;
-      link.textContent = `🔗 View ${name}'s Profile`;
+      link.textContent = '🔗 View ${name}'s Profile';
       link.target = "_blank";
       link.style.display = "block";
       container.appendChild(link);
@@ -53,7 +53,7 @@ function renderChart(pscs) {
           callbacks: {
             label: function(context) {
               const i = context.dataIndex;
-              return `${labels[i]}: ${data[i]}% – ${tooltips[i]}`;
+              return '${labels[i]}: ${data[i]}% - ${tooltips[i]}';
             }
           }
         }
