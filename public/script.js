@@ -1,6 +1,6 @@
 function fetchShareholders() {
   const companyNumber = document.getElementById("companyInput").value;
-  fetch(`/api/psc?companyNumber=${companyNumber}`)
+  fetch('/api/psc?companyNumber=${companyNumber}')
     .then(res => res.json())
     .then(data => renderChart(data.items))
     .catch(err => console.error("Client error:", err));
