@@ -1,0 +1,17 @@
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f9f9f9;
+}
+input, button {
+  padding: 10px;
+  margin-right: 10px;
+}
+button {
+  background: #0078D4;
+  color: white;
+  border: none;
+}
+#shareholderLinks {
+  margin-top: 20px;
+}
