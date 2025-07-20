@@ -1,7 +1,8 @@
 // api/psc.js
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+
+module.exports = async function handler(req, res) {
   try {
     const { companyNumber } = req.query;
 
