@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     const apiKey = process.env.CH_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'API key not configured in environment' });
+      return res.status(500).json({ error: 'API key not configured in environment'+apiKey });
     }
 
     const endpoint = `https://api.company-information.service.gov.uk/company/${companyNumber}/persons-with-significant-control`;
