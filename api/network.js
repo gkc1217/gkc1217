@@ -1,112 +1,135 @@
-const fetch = require('node-fetch');
+function lookupCompany() {
+  const companyNumber = document.getElementById("companyInput").value.trim();
+  if (!companyNumber) return;
+  setUIState("loading");
 
-module.exports = async (req, res) => {
-  const { companyNumber } = req.query;
-  const API_KEY = process.env.CH_API_KEY;
-
-  if (!companyNumber || !API_KEY) {
-    console.error("❌ Missing companyNumber or API key");
-    return res.status(400).json({ error: "Missing company number or API key" });
-  }
-
-  const headers = {
-    Authorization: 'Basic ' + Buffer.from(API_KEY + ':').toString('base64')
-  };
-
-  const seenCompanies = new Set([companyNumber]);
-  const graph = { nodes: [], links: [] };
-
-  try {
-    // Level 1: Fetch main company
-    const company = await fetchCompany(companyNumber, headers);
-    graph.nodes.push({
-      id: `company-${companyNumber}`,
-      label: company.company_name || `Company ${companyNumber}`,
-      type: "company"
-    });
-
-    const officers = await fetchOfficers(companyNumber, headers);
-
-    for (const officer of officers) {
-      const name = typeof officer.name === "string" ? officer.name : "Unnamed Officer";
-      const officerId = `officer-${name}`;
-
-      graph.nodes.push({
-        id: officerId,
-        label: name,
-        type: "officer"
-      });
-
-      graph.links.push({
-        source: officerId,
-        target: `company-${companyNumber}`
-      });
-
-      const appointments = await fetchAppointments(officer, headers);
-
-      for (const item of appointments) {
-        const otherNum = item.appointed_to?.company_number;
-        if (!otherNum || seenCompanies.has(otherNum)) continue;
-
-        seenCompanies.add(otherNum);
-        const otherCompany = await fetchCompany(otherNum, headers);
-
-        graph.nodes.push({
-          id: `company-${otherNum}`,
-          label: otherCompany.company_name || `Company ${otherNum}`,
-          type: "company"
-        });
-
-        graph.links.push({
-          source: officerId,
-          target: `company-${otherNum}`
-        });
+  fetch(`/api/network?companyNumber=${companyNumber}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!Array.isArray(data.nodes) || !Array.isArray(data.links)) {
+        setUIState("error");
+        return;
       }
-    }
 
-    graph.nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
-    graph.links = Array.isArray(graph.links) ? graph.links : [];
+      setUIState("success");
 
-    console.log(`✅ Graph built: ${graph.nodes.length} nodes, ${graph.links.length} links`);
-    res.status(200).json(graph);
-  } catch (err) {
-    console.error("🔥 Unexpected server error:", err);
-    res.status(200).json(graph); // Fallback with partial data
-  }
-};
+      const companyCount = data.nodes.filter(n => n.type === "company").length;
+      const officerCount = data.nodes.filter(n => n.type === "officer").length;
 
-// 🧩 Helper Functions
+      document.getElementById("statusMessage").innerHTML = `
+        ✅ Network loaded.<br>
+        <strong>${companyCount}</strong> companies and <strong>${officerCount}</strong> officers linked.
+      `;
 
-async function fetchCompany(num, headers) {
-  try {
-    const res = await fetch(`https://api.company-information.service.gov.uk/company/${num}`, { headers });
-    return res.ok ? await res.json() : {};
-  } catch (err) {
-    console.error(`❌ Error fetching company ${num}:`, err);
-    return {};
-  }
+      drawNetwork(data.nodes, data.links);
+    })
+    .catch(err => {
+      console.error("Network fetch failed:", err);
+      setUIState("error");
+    });
 }
 
-async function fetchOfficers(num, headers) {
-  try {
-    const res = await fetch(`https://api.company-information.service.gov.uk/company/${num}/officers`, { headers });
-    const { items = [] } = await res.json();
-    return items;
-  } catch (err) {
-    console.error(`❌ Error fetching officers for ${num}:`, err);
-    return [];
-  }
+function setUIState(state) {
+  document.getElementById("loader").style.display = state === "loading" ? "block" : "none";
+  document.getElementById("retryContainer").style.display = state === "error" ? "block" : "none";
+  document.getElementById("statusMessage").textContent =
+    state === "success" ? "✅ Network loaded." :
+    state === "error" ? "⚠️ Load failed. Try again." : "";
+  if (state !== "success") d3.select("#networkGraph").selectAll("g").remove();
 }
 
-async function fetchAppointments(officer, headers) {
-  try {
-    if (!officer.links?.officer?.appointments) return [];
-    const url = `https://api.company-information.service.gov.uk${officer.links.officer.appointments}`;
-    const res = await fetch(url, { headers });
-    const { items = [] } = await res.json();
-    return items;
-  } catch (err) {
-    console.error(`❌ Error fetching appointments for ${officer.name || "unknown"}:`, err);
-    return [];
+function drawNetwork(nodes, links) {
+  const svg = d3.select("#networkGraph");
+  svg.selectAll("g").remove();
+  const tooltip = d3.select("#tooltip");
+
+  const zoomGroup = svg.append("g");
+  svg.call(d3.zoom().scaleExtent([0.5, 2]).on("zoom", e => zoomGroup.attr("transform", e.transform)));
+
+  const simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(120))
+    .force("charge", d3.forceManyBody().strength(-300))
+    .force("center", d3.forceCenter(400, 300));
+
+  // Draw links
+  zoomGroup.append("g")
+    .selectAll("line")
+    .data(links)
+    .enter()
+    .append("line")
+    .attr("stroke", "#aaa");
+
+  // Draw icons
+  const iconSize = 20;
+  zoomGroup.append("g")
+    .selectAll("use")
+    .data(nodes)
+    .enter()
+    .append("use")
+    .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
+    .attr("x", -iconSize / 2)
+    .attr("y", -iconSize / 2)
+    .attr("width", iconSize)
+    .attr("height", iconSize)
+    .on("mouseover", function (event, d) {
+      tooltip.style("display", "block")
+        .style("left", event.pageX + 10 + "px")
+        .style("top", event.pageY + "px")
+        .html(`<strong>${d.label}</strong><br>Type: ${d.type}`);
+    })
+    .on("mouseout", () => tooltip.style("display", "none"))
+    .on("dblclick", (event, d) => {
+      const base = "https://find-and-update.company-information.service.gov.uk";
+      if (d.id.startsWith("company-")) {
+        const num = d.id.split("-")[1];
+        window.open(`${base}/company/${num}`, "_blank");
+      }
+    })
+    .call(d3.drag()
+      .on("start", dragStart)
+      .on("drag", dragMove)
+      .on("end", dragEnd));
+
+  // Add labels
+  zoomGroup.append("g")
+    .selectAll("text")
+    .data(nodes)
+    .enter()
+    .append("text")
+    .text(d => d.label)
+    .attr("font-size", "11px")
+    .attr("x", 12)
+    .attr("y", 4)
+    .attr("fill", "#333");
+
+  simulation.on("tick", () => {
+    zoomGroup.selectAll("line")
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    zoomGroup.selectAll("use")
+      .attr("x", d => d.x - iconSize / 2)
+      .attr("y", d => d.y - iconSize / 2);
+
+    zoomGroup.selectAll("text")
+      .attr("x", d => d.x + 12)
+      .attr("y", d => d.y + 4);
+  });
+
+  function dragStart(event) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
+  }
+  function dragMove(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+  }
+  function dragEnd(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    event.subject.fx = null;
+    event.subject.fy = null;
   }
 }
