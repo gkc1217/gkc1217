@@ -82,7 +82,7 @@ function renderOfficers(officers) {
   
   const ctx = document.getElementById('officerChart').getContext('2d');
   if (officerChartInstance ) {
-  shareholderChartInstance.destroy();
+  officerChartInstance.destroy();
 }
 officerChartInstance = new Chart(ctx, {
     type: 'bar',
