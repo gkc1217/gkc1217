@@ -8,7 +8,7 @@
 </head>
 <body>
   <h1>🔍 Company Network Explorer</h1>
-  <input type="text" id="companyInput" placeholder="Enter Company Number" value ="07946822">
+  <input type="text" id="companyInput" placeholder="Enter Company Number">
   <button onclick="lookupCompany()">Search</button>
 
   <div id="statusMessage"></div>
@@ -17,22 +17,30 @@
     <button onclick="lookupCompany()">🔄 Retry</button>
   </div>
 
+  <!-- Main SVG canvas -->
   <svg id="networkGraph" width="800" height="600">
     <defs>
-      <!-- Company icon -->
-      <g id="companyIcon" transform="scale(0.04)">
-        <rect x="200" y="200" width="600" height="600" fill="#0078D4" />
-        <path fill="white" d="M280 280h120v120H280zM600 280h120v120H600zM280 600h120v120H280zM600 600h120v120H600z" />
-      </g>
-      <!-- Officer icon -->
-      <g id="personIcon" transform="scale(0.04)">
-        <circle cx="500" cy="300" r="150" fill="#FFD700" />
-        <rect x="350" y="500" width="300" height="400" fill="#FFD700" />
-      </g>
+      <!-- 🏢 Company icon -->
+      <symbol id="companyIcon" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <rect x="0" y="0" width="100" height="100" fill="#0078D4" />
+        <rect x="20" y="20" width="25" height="25" fill="white" />
+        <rect x="55" y="20" width="25" height="25" fill="white" />
+        <rect x="20" y="55" width="25" height="25" fill="white" />
+        <rect x="55" y="55" width="25" height="25" fill="white" />
+      </symbol>
+
+      <!-- 🧑 Officer icon -->
+      <symbol id="personIcon" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <circle cx="50" cy="30" r="20" fill="#FFD700" />
+        <rect x="35" y="60" width="30" height="30" fill="#FFD700" />
+      </symbol>
     </defs>
   </svg>
 
+  <!-- Tooltip container -->
   <div id="tooltip"></div>
+
+  <!-- Graph logic -->
   <script src="script.js"></script>
 </body>
 </html>
