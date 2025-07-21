@@ -10,7 +10,17 @@ function lookupCompany() {
         setUIState("error");
         return;
       }
+
       setUIState("success");
+
+      const companyCount = data.nodes.filter(n => n.type === "company").length;
+      const officerCount = data.nodes.filter(n => n.type === "officer").length;
+
+      document.getElementById("statusMessage").innerHTML = `
+        ✅ Network loaded.<br>
+        <strong>${companyCount}</strong> companies and <strong>${officerCount}</strong> officers linked.
+      `;
+
       drawNetwork(data.nodes, data.links);
     })
     .catch(err => {
@@ -25,44 +35,37 @@ function setUIState(state) {
   document.getElementById("statusMessage").textContent =
     state === "success" ? "✅ Network loaded." :
     state === "error" ? "⚠️ Load failed. Try again." : "";
-  if (state !== "success") d3.select("#networkGraph").selectAll("*").remove();
+  if (state !== "success") d3.select("#networkGraph").selectAll("g").remove();
 }
 
 function drawNetwork(nodes, links) {
   const svg = d3.select("#networkGraph");
-  svg.selectAll("*").remove();
-
+  svg.selectAll("g").remove();
   const tooltip = d3.select("#tooltip");
 
   const zoomGroup = svg.append("g");
-
-  const zoom = d3.zoom()
-    .scaleExtent([0.5, 2])
-    .on("zoom", (event) => zoomGroup.attr("transform", event.transform));
-
-  svg.call(zoom);
+  svg.call(d3.zoom().scaleExtent([0.5, 2]).on("zoom", e => zoomGroup.attr("transform", e.transform)));
 
   const simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links).id(d => d.id).distance(120))
     .force("charge", d3.forceManyBody().strength(-300))
     .force("center", d3.forceCenter(400, 300));
 
-  const link = zoomGroup.append("g")
-    .attr("stroke", "#aaa")
+  zoomGroup.append("g")
     .selectAll("line")
     .data(links)
     .enter()
-    .append("line");
+    .append("line")
+    .attr("stroke", "#aaa");
 
-  const node = zoomGroup.append("g")
-    .selectAll("circle")
+  const nodeGroup = zoomGroup.append("g")
+    .selectAll("use")
     .data(nodes)
     .enter()
-    .append("circle")
-    .attr("r", 10)
-    .attr("fill", d => d.type === "company" ? "#0078D4" : "#FFD700")
-    .attr("stroke", "#333")
-    .attr("stroke-width", 1.5)
+    .append("use")
+    .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
+    .attr("x", -10).attr("y", -10)
+    .attr("width", 20).attr("height", 20)
     .on("mouseover", function (event, d) {
       tooltip.style("display", "block")
         .style("left", event.pageX + 10 + "px")
@@ -82,28 +85,29 @@ function drawNetwork(nodes, links) {
       .on("drag", dragMove)
       .on("end", dragEnd));
 
-  const label = zoomGroup.append("g")
+  zoomGroup.append("g")
     .selectAll("text")
     .data(nodes)
     .enter()
     .append("text")
     .text(d => d.label)
     .attr("font-size", "11px")
-    .attr("fill", "#333")
-    .attr("font-family", "Arial");
+    .attr("x", 12)
+    .attr("y", 4)
+    .attr("fill", "#333");
 
   simulation.on("tick", () => {
-    link
+    zoomGroup.selectAll("line")
       .attr("x1", d => d.source.x)
       .attr("y1", d => d.source.y)
       .attr("x2", d => d.target.x)
       .attr("y2", d => d.target.y);
 
-    node
-      .attr("cx", d => d.x)
-      .attr("cy", d => d.y);
+    zoomGroup.selectAll("use")
+      .attr("x", d => d.x - 10)
+      .attr("y", d => d.y - 10);
 
-    label
+    zoomGroup.selectAll("text")
       .attr("x", d => d.x + 12)
       .attr("y", d => d.y + 4);
   });
@@ -113,15 +117,11 @@ function drawNetwork(nodes, links) {
     event.subject.fx = event.subject.x;
     event.subject.fy = event.subject.y;
   }
-
   function dragMove(event) {
     event.subject.fx = event.x;
     event.subject.fy = event.y;
   }
-
   function dragEnd(event) {
     if (!event.active) simulation.alphaTarget(0);
     event.subject.fx = null;
-    event.subject.fy = null;
-  }
-}
+   

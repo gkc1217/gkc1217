@@ -1,5 +1,5 @@
 body {
-  font-family: Arial, sans-serif;
+  font-family: Arial;
   padding: 20px;
   background-color: #f9f9f9;
 }
@@ -17,17 +17,20 @@ svg {
   margin-top: 20px;
 }
 #tooltip {
+  position: absolute;
+  display: none;
   background-color: white;
   border: 1px solid #333;
-  padding: 5px 8px;
+  padding: 5px;
   font-size: 12px;
   border-radius: 4px;
   pointer-events: none;
 }
 #loader {
   display: none;
-  color: #0078D4;
   font-weight: bold;
+  color: #0078D4;
+  margin-top: 10px;
 }
 #retryContainer {
   display: none;

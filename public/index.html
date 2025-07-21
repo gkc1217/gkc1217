@@ -8,18 +8,30 @@
 </head>
 <body>
   <h1>🔍 Company Network Explorer</h1>
-  <input type="text" id="companyInput" placeholder="Enter Company Number">
+  <input type="text" id="companyInput" placeholder="Enter Company Number" value="07946822">
   <button onclick="lookupCompany()">Search</button>
 
   <div id="statusMessage"></div>
   <div id="loader">⏳ Loading network...</div>
   <div id="retryContainer">
-    <button onclick="lookupCompany(true)">🔄 Retry</button>
+    <button onclick="lookupCompany()">🔄 Retry</button>
   </div>
 
-  <svg id="networkGraph" width="800" height="600"></svg>
-  <div id="tooltip" style="position: absolute; display: none;"></div>
+  <svg id="networkGraph" width="800" height="600">
+    <!-- SVG icons for nodes -->
+    <defs>
+      <g id="companyIcon" transform="scale(0.05)">
+        <path fill="#0078D4" d="M100 100h800v800H100z" />
+        <path fill="white" d="M200 200h200v200H200zM600 200h200v200H600zM200 600h200v200H200zM600 600h200v200H600z" />
+      </g>
+      <g id="personIcon" transform="scale(0.05)">
+        <circle cx="500" cy="300" r="150" fill="#FFD700" />
+        <path d="M350 500h300v400H350z" fill="#FFD700" />
+      </g>
+    </defs>
+  </svg>
 
+  <div id="tooltip"></div>
   <script src="script.js"></script>
 </body>
 </html>
