@@ -10,13 +10,16 @@
   <h1>🔍 Company Network Explorer</h1>
   <input type="text" id="companyInput" placeholder="Enter Company Number">
   <button onclick="lookupCompany()">Search</button>
-  <svg id="networkGraph"></svg>
+
+  <div id="statusMessage"></div>
+  <div id="loader">⏳ Loading network...</div>
+  <div id="retryContainer">
+    <button onclick="lookupCompany(true)">🔄 Retry</button>
+  </div>
+
+  <svg id="networkGraph" width="800" height="600"></svg>
+  <div id="tooltip" style="position: absolute; display: none;"></div>
+
   <script src="script.js"></script>
-  <div id="statusMessage" style="margin-top:20px; font-weight:bold;"></div>
-<div id="loader" style="display:none; margin-top:10px;">⏳ Loading network...</div>
-<div id="retryContainer" style="display:none;">
-  <button onclick="lookupCompany(true)">🔄 Retry</button>
-</div>
-<svg id="networkGraph" width="800" height="600"></svg>
 </body>
 </html>

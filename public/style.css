@@ -1,5 +1,5 @@
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   padding: 20px;
   background-color: #f9f9f9;
 }
@@ -8,22 +8,32 @@ input, button {
   margin-right: 10px;
 }
 button {
-  background: #0078D4;
+  background-color: #0078D4;
   color: white;
   border: none;
 }
 svg {
   border: 1px solid #ccc;
   margin-top: 20px;
-  width: 100%;
-  height: 600px;
+}
+#tooltip {
+  background-color: white;
+  border: 1px solid #333;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  pointer-events: none;
 }
 #loader {
+  display: none;
   color: #0078D4;
-  font-size: 16px;
+  font-weight: bold;
+}
+#retryContainer {
+  display: none;
+  margin-top: 10px;
 }
 #retryContainer button {
-  margin-top: 10px;
   padding: 10px;
   background-color: #ff6a00;
   color: white;
