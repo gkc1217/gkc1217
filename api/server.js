@@ -30,7 +30,7 @@ app.get('/api/network/:companyNumber', async (req, res) => {
 
         const company = await companyRes.json();
         const officers = await officersRes.json();
-
+console.error("officers:", officers);
         graph.nodes.push({
           id: `company-${companyNumber}`,
           label: company.company_name || companyNumber,
