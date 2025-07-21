@@ -1,3 +1,6 @@
+let shareholderChartInstance = null;
+let officerChartInstance = null;
+
 function lookupCompany() {
   const companyNumber = document.getElementById("companyInput").value.trim();
   if (!companyNumber) return;
@@ -41,8 +44,12 @@ function renderShareholders(pscs) {
       linkContainer.appendChild(link);
     }
   });
-
+ 
   const ctx = document.getElementById('shareholderChart').getContext('2d');
+  if (shareholderChartInstance) {
+  shareholderChartInstance.destroy();
+}
+shareholderChartInstance = 
   new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -72,8 +79,12 @@ function renderOfficers(officers) {
     }
   });
 
+  
   const ctx = document.getElementById('officerChart').getContext('2d');
-  new Chart(ctx, {
+  if (officerChartInstance ) {
+  shareholderChartInstance.destroy();
+}
+officerChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
       labels: Object.keys(roles),
