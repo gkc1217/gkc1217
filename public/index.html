@@ -2,23 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Company Insights Viewer</title>
+  <title>Company Network Explorer</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Load Chart.js BEFORE your custom script -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
-  <h1>🏢 Company Insights Viewer</h1>
-  <input type="text" id="companyInput" placeholder="Enter Company Number" value="00445790">
+  <h1>🔍 Company Network Explorer</h1>
+  <input type="text" id="companyInput" placeholder="Enter Company Number">
   <button onclick="lookupCompany()">Search</button>
-
-  <h2>🔎 Shareholder Ownership</h2>
-  <canvas id="shareholderChart" width="400" height="200"></canvas>
-  <div id="shareholderLinks"></div>
-
-  <h2>🧑‍💼 Officer Breakdown</h2>
-  <canvas id="officerChart" width="400" height="200"></canvas>
-
+  <svg id="networkGraph"></svg>
   <script src="script.js"></script>
 </body>
 </html>

@@ -1,28 +1,33 @@
-fetch(`/api/network/${companyNumber}`)
-  .then(res => res.json())
-  .then(data => {
-    drawNetwork(data.nodes, data.links);
-  });
+function lookupCompany() {
+  const companyNumber = document.getElementById("companyInput").value.trim();
+  if (!companyNumber) return;
+
+  fetch(`/api/network/${companyNumber}`)
+    .then(res => res.json())
+    .then(data => drawNetwork(data.nodes, data.links))
+    .catch(err => console.error("Error loading network:", err));
+}
 
 function drawNetwork(nodes, links) {
-  const width = 800;
-  const height = 600;
+  const svg = d3.select("#networkGraph");
+  svg.selectAll("*").remove();
 
-  const svg = d3.select("svg")
-    .attr("width", width)
-    .attr("height", height);
+  const width = +svg.attr("width") || 800;
+  const height = +svg.attr("height") || 600;
 
   const simulation = d3.forceSimulation(nodes)
     .force("link", d3.forceLink(links).id(d => d.id).distance(100))
     .force("charge", d3.forceManyBody().strength(-300))
     .force("center", d3.forceCenter(width / 2, height / 2));
 
-  const link = svg.selectAll("line")
+  const link = svg.append("g")
+    .selectAll("line")
     .data(links)
     .enter().append("line")
-    .attr("stroke", "#ccc");
+    .attr("stroke", "#aaa");
 
-  const node = svg.selectAll("circle")
+  const node = svg.append("g")
+    .selectAll("circle")
     .data(nodes)
     .enter().append("circle")
     .attr("r", 10)
@@ -32,11 +37,13 @@ function drawNetwork(nodes, links) {
       .on("drag", dragMove)
       .on("end", dragEnd));
 
-  const label = svg.selectAll("text")
+  const label = svg.append("g")
+    .selectAll("text")
     .data(nodes)
     .enter().append("text")
     .text(d => d.label)
-    .attr("font-size", "12px");
+    .attr("font-size", "11px")
+    .attr("fill", "#333");
 
   simulation.on("tick", () => {
     link
