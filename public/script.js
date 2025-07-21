@@ -32,10 +32,11 @@ function lookupCompany() {
 function setUIState(state) {
   document.getElementById("loader").style.display = state === "loading" ? "block" : "none";
   document.getElementById("retryContainer").style.display = state === "error" ? "block" : "none";
-  document.getElementById("statusMessage").textContent =
-    state === "success" ? "✅ Network loaded." :
-    state === "error" ? "⚠️ Load failed. Try again." : "";
-  if (state !== "success") d3.select("#networkGraph").selectAll("g").remove();
+  if (state !== "success") {
+    document.getElementById("statusMessage").textContent =
+      state === "error" ? "⚠️ Load failed. Try again." : "";
+    d3.select("#networkGraph").selectAll("g").remove();
+  }
 }
 
 function drawNetwork(nodes, links) {
@@ -58,19 +59,22 @@ function drawNetwork(nodes, links) {
     .append("line")
     .attr("stroke", "#aaa");
 
-  const nodeGroup = zoomGroup.append("g")
+  const iconSize = 20;
+  zoomGroup.append("g")
     .selectAll("use")
     .data(nodes)
     .enter()
     .append("use")
     .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
-    .attr("x", -10).attr("y", -10)
-    .attr("width", 20).attr("height", 20)
+    .attr("x", -iconSize / 2)
+    .attr("y", -iconSize / 2)
+    .attr("width", iconSize)
+    .attr("height", iconSize)
     .on("mouseover", function (event, d) {
       tooltip.style("display", "block")
         .style("left", event.pageX + 10 + "px")
         .style("top", event.pageY + "px")
-        .html(`<strong>${d.label}</strong><br>${d.type}`);
+        .html(`<strong>${d.label}</strong><br>Type: ${d.type}`);
     })
     .on("mouseout", () => tooltip.style("display", "none"))
     .on("dblclick", (event, d) => {
@@ -104,8 +108,8 @@ function drawNetwork(nodes, links) {
       .attr("y2", d => d.target.y);
 
     zoomGroup.selectAll("use")
-      .attr("x", d => d.x - 10)
-      .attr("y", d => d.y - 10);
+      .attr("x", d => d.x - iconSize / 2)
+      .attr("y", d => d.y - iconSize / 2);
 
     zoomGroup.selectAll("text")
       .attr("x", d => d.x + 12)
@@ -117,11 +121,15 @@ function drawNetwork(nodes, links) {
     event.subject.fx = event.subject.x;
     event.subject.fy = event.subject.y;
   }
+
   function dragMove(event) {
     event.subject.fx = event.x;
     event.subject.fy = event.y;
   }
+
   function dragEnd(event) {
     if (!event.active) simulation.alphaTarget(0);
-    event.subject.fx = null;   
+    event.subject.fx = null;
+    event.subject.fy = null;
   }
+}
