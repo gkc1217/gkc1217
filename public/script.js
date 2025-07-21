@@ -123,5 +123,5 @@ function drawNetwork(nodes, links) {
   }
   function dragEnd(event) {
     if (!event.active) simulation.alphaTarget(0);
-    event.subject.fx = null;
-   
+    event.subject.fx = null;   
+  }
