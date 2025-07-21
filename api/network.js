@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    for (let depth = 0; depth < 3 && queue.length > 0; depth++) {
+    for (let depth = 0; depth < 2 && queue.length > 0; depth++) {
       const currentBatch = [...queue];
       queue.length = 0;
 
@@ -33,7 +33,7 @@ module.exports = async (req, res) => {
         } catch (err) {
           console.warn(`Failed to fetch company ${num}:`, err);
         }
-
+               console.error ("response",res);
         graph.nodes.push({
           id: `company-${num}`,
           label: company.company_name || `Company ${num}`,
