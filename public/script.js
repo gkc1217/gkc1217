@@ -2,7 +2,8 @@ function lookupCompany() {
   const companyNumber = document.getElementById("companyInput").value.trim();
   if (!companyNumber) return;
 
-  fetch(`/api/network/${companyNumber}`)
+  fetch(`/api/network?companyNumber=${companyNumber}`)
+
     .then(res => res.json())
     .then(data => drawNetwork(data.nodes, data.links))
     .catch(err => console.error("Error loading network:", err));
