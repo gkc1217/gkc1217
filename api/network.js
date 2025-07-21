@@ -1,15 +1,15 @@
-require('dotenv').config();
-const express = require('express');
 const fetch = require('node-fetch');
-const app = express();
-const PORT = 3000;
-const API_KEY = process.env.CH_API_KEY;
 
-app.use(express.static('public'));
+module.exports = async (req, res) => {
+  const { companyNumber } = req.query;
+  const API_KEY = process.env.CH_API_KEY;
 
-app.get('/api/network/:companyNumber', async (req, res) => {
+  if (!companyNumber || !API_KEY) {
+    return res.status(400).json({ error: "Missing company number or API key" });
+  }
+
   const seenCompanies = new Set();
-  const queue = [req.params.companyNumber];
+  const queue = [companyNumber];
   const graph = { nodes: [], links: [] };
 
   try {
@@ -17,39 +17,55 @@ app.get('/api/network/:companyNumber', async (req, res) => {
       const currentBatch = [...queue];
       queue.length = 0;
 
-      for (const companyNumber of currentBatch) {
-        if (seenCompanies.has(companyNumber)) continue;
-        seenCompanies.add(companyNumber);
+      for (const num of currentBatch) {
+        if (seenCompanies.has(num)) continue;
+        seenCompanies.add(num);
 
-        const headers = {
-          Authorization: 'Basic ' + Buffer.from(API_KEY + ':').toString('base64')
+        const base = `https://api.company-information.service.gov.uk/company/${num}`;
+        const authHeader = {
+          headers: {
+            Authorization: 'Basic ' + Buffer.from(API_KEY + ':').toString('base64')
+          }
         };
 
-        const companyRes = await fetch(`https://api.company-information.service.gov.uk/company/${companyNumber}`, { headers });
-        const officersRes = await fetch(`https://api.company-information.service.gov.uk/company/${companyNumber}/officers`, { headers });
+        const [companyRes, officerRes] = await Promise.all([
+          fetch(base, authHeader),
+          fetch(`${base}/officers`, authHeader)
+        ]);
 
         const company = await companyRes.json();
-        const officers = await officersRes.json();
-console.error("officers:", officers);
+        const officers = await officerRes.json();
+
         graph.nodes.push({
-          id: `company-${companyNumber}`,
-          label: company.company_name || companyNumber,
+          id: `company-${num}`,
+          label: company.company_name || num,
           type: "company"
         });
 
         for (const officer of officers.items || []) {
-          const officerId = `officer-${officer.name}`;
-          graph.nodes.push({ id: officerId, label: officer.name, type: "officer" });
-          graph.links.push({ source: officerId, target: `company-${companyNumber}` });
+          const name = officer.name || "Unnamed Officer";
+          const officerId = `officer-${name}`;
+
+          graph.nodes.push({
+            id: officerId,
+            label: name,
+            type: "officer"
+          });
+
+          graph.links.push({
+            source: officerId,
+            target: `company-${num}`
+          });
 
           if (officer.links?.officer?.appointments) {
-            const appointRes = await fetch("https://api.company-information.service.gov.uk" + officer.links.officer.appointments, { headers });
-            const appointments = await appointRes.json();
+            const appointURL = `https://api.company-information.service.gov.uk${officer.links.officer.appointments}`;
+            const appointRes = await fetch(appointURL, authHeader);
+            const appointData = await appointRes.json();
 
-            for (const item of appointments.items || []) {
-              const otherCompanyNumber = item.appointed_to?.company_number;
-              if (otherCompanyNumber && !seenCompanies.has(otherCompanyNumber)) {
-                queue.push(otherCompanyNumber);
+            for (const appointment of appointData.items || []) {
+              const otherNum = appointment.appointed_to?.company_number;
+              if (otherNum && !seenCompanies.has(otherNum)) {
+                queue.push(otherNum);
               }
             }
           }
@@ -57,11 +73,9 @@ console.error("officers:", officers);
       }
     }
 
-    res.json(graph);
+    res.status(200).json(graph);
   } catch (err) {
-    console.error("Network error:", err);
-    res.status(500).json({ error: "Failed to fetch network data" });
+    console.error("Network.js error:", err);
+    res.status(500).json({ error: "Failed to build network graph" });
   }
-});
-
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+};
