@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Company Ownership Viewer</title>
+  <title>Company Insights Viewer</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.min.js"></script>
 </head>
 <body>
-  <h1>🔍 Lookup Shareholder Info</h1>
-  <input type="text" id="companyInput" placeholder="Enter Company Number" value = "11486287">
-  <button onclick="fetchShareholders()">Search</button>
-  <canvas id="shareholderChart" width="400" height="200"></canvas>
+  <h1>🏢 Company Insights Viewer</h1>
+  <input type="text" id="companyInput" placeholder="Enter Company Number">
+  <button onclick="lookupCompany()">Search</button>
+  
+  <h2>🔎 Shareholder Ownership</h2>
+  <canvas id="shareholderChart"></canvas>
   <div id="shareholderLinks"></div>
+
+  <h2>🧑‍💼 Officer Roles</h2>
+  <canvas id="officerChart"></canvas>
   <script src="script.js"></script>
 </body>
 </html>

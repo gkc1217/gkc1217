@@ -8,10 +8,15 @@ input, button {
   margin-right: 10px;
 }
 button {
-  background: #0078D4;
+  background-color: #0078D4;
   color: white;
   border: none;
 }
-#shareholderLinks {
+canvas {
+  max-width: 600px;
   margin-top: 20px;
+}
+a {
+  margin: 5px 0;
+  display: block;
 }
