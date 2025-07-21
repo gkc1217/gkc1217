@@ -8,7 +8,7 @@
 </head>
 <body>
   <h1>🔍 Company Network Explorer</h1>
-  <input type="text" id="companyInput" placeholder="Enter Company Number" value="07946822">
+  <input type="text" id="companyInput" placeholder="Enter Company Number" value ="07946822">
   <button onclick="lookupCompany()">Search</button>
 
   <div id="statusMessage"></div>
@@ -18,15 +18,16 @@
   </div>
 
   <svg id="networkGraph" width="800" height="600">
-    <!-- SVG icons for nodes -->
     <defs>
-      <g id="companyIcon" transform="scale(0.05)">
-        <path fill="#0078D4" d="M100 100h800v800H100z" />
-        <path fill="white" d="M200 200h200v200H200zM600 200h200v200H600zM200 600h200v200H200zM600 600h200v200H600z" />
+      <!-- Company icon -->
+      <g id="companyIcon" transform="scale(0.04)">
+        <rect x="200" y="200" width="600" height="600" fill="#0078D4" />
+        <path fill="white" d="M280 280h120v120H280zM600 280h120v120H600zM280 600h120v120H280zM600 600h120v120H600z" />
       </g>
-      <g id="personIcon" transform="scale(0.05)">
+      <!-- Officer icon -->
+      <g id="personIcon" transform="scale(0.04)">
         <circle cx="500" cy="300" r="150" fill="#FFD700" />
-        <path d="M350 500h300v400H350z" fill="#FFD700" />
+        <rect x="350" y="500" width="300" height="400" fill="#FFD700" />
       </g>
     </defs>
   </svg>
