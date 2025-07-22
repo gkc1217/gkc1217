@@ -99,7 +99,11 @@ function drawNetwork(nodes, links) {
     .attr("x", 12)
     .attr("y", 4)
     .attr("fill", "#333");
-
+const mainCompany = nodes.find(n => n.id === `company-${document.getElementById("companyInput").value.trim()}`);
+if (mainCompany) {
+  mainCompany.fx = 400; // X center
+  mainCompany.fy = 550; // Bottom of the graph
+}
   simulation.on("tick", () => {
     zoomGroup.selectAll("line")
       .attr("x1", d => d.source.x)
