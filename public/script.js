@@ -1,115 +1,122 @@
-function lookupCompany() {
-  const companyNumber = document.getElementById("companyInput").value.trim();
-  const depth = parseInt(document.getElementById("depthSelect").value || "2", 10);
-  if (!companyNumber) return;
-
-  setUIState("loading");
-
-  fetch(`/api/network?companyNumber=${companyNumber}&depth=${depth}`)
-    .then(res => res.json())
-    .then(data => {
-      if (!Array.isArray(data.nodes) || !Array.isArray(data.links)) {
-        setUIState("error");
-        return;
-      }
-
-      setUIState("success");
-
-      const companyCount = data.nodes.filter(n => n.type === "company").length;
-      const officerCount = data.nodes.filter(n => n.type === "officer").length;
-
-      document.getElementById("statusMessage").innerHTML = `
-        ✅ Network loaded.<br>
-        <strong>${companyCount}</strong> companies and <strong>${officerCount}</strong> officers linked.
-      `;
-
-      drawNetwork(data.nodes, data.links, companyNumber);
-    })
-    .catch(err => {
-      console.error("Network fetch failed:", err);
-      setUIState("error");
-    });
-}
-
-function setUIState(state) {
-  document.getElementById("loader").style.display = state === "loading" ? "block" : "none";
-  document.getElementById("retryContainer").style.display = state === "error" ? "block" : "none";
-  if (state !== "success") {
-    document.getElementById("statusMessage").textContent =
-      state === "error" ? "⚠️ Load failed. Try again." : "";
-    d3.select("#networkGraph").selectAll("g").remove();
-  }
-}
-
-function drawNetwork(nodes, links, companyNumber) {
+document.addEventListener("DOMContentLoaded", () => {
   const svg = d3.select("#networkGraph");
-  svg.selectAll("g").remove();
   const tooltip = d3.select("#tooltip");
+  const loader = document.getElementById("loader");
+  const retryContainer = document.getElementById("retryContainer");
+  const statusMessage = document.getElementById("statusMessage");
 
-  const zoomGroup = svg.append("g");
-  svg.call(d3.zoom().scaleExtent([0.5, 2]).on("zoom", e => zoomGroup.attr("transform", e.transform)));
+  const width = +svg.attr("width");
+  const height = +svg.attr("height");
+  const simulation = d3.forceSimulation()
+    .force("link", d3.forceLink().id(d => d.id).distance(150))
+    .force("charge", d3.forceManyBody().strength(-400))
+    .force("center", d3.forceCenter(width / 2, height / 2));
 
-  const simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(150))
-    .force("charge", d3.forceManyBody().strength(-300))
-    .force("center", d3.forceCenter(400, 300));
+  function lookupCompany() {
+    const companyNumber = document.getElementById("companyInput").value.trim();
+    const depth = document.getElementById("depthSelect").value;
+    if (!companyNumber) return;
 
-  const mainCompany = nodes.find(n => n.id === `company-${companyNumber}`);
-  if (mainCompany) {
-    mainCompany.fx = 400;
-    mainCompany.fy = 550;
+    loader.style.display = "block";
+    statusMessage.textContent = "";
+    retryContainer.style.display = "none";
+    svg.selectAll("*").remove();
+
+    fetch(`/api/network?companyNumber=${companyNumber}&depth=${depth}`)
+      .then(response => response.json())
+      .then(data => {
+        loader.style.display = "none";
+        drawGraph(data);
+      })
+      .catch(err => {
+        loader.style.display = "none";
+        statusMessage.textContent = "❌ Failed to load data. Check company number or try again.";
+        retryContainer.style.display = "block";
+        console.error(err);
+      });
   }
 
-  zoomGroup.append("g")
-    .selectAll("line")
-    .data(links)
-    .enter()
-    .append("line")
-    .attr("stroke", "#aaa");
+  function drawGraph(data) {
+    const links = data.links;
+    const nodes = data.nodes;
 
-  const iconSize = 20;
-  zoomGroup.append("g")
-    .selectAll("use")
-    .data(nodes)
-    .enter()
-    .append("use")
-    .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
-    .attr("x", -iconSize / 2)
-    .attr("y", -iconSize / 2)
-    .attr("width", iconSize)
-    .attr("height", iconSize)
-    .on("mouseover", function (event, d) {
+    const zoom = d3.zoom().on("zoom", (event) => {
+      svgGroup.attr("transform", event.transform);
+    });
+    svg.call(zoom);
+
+    const svgGroup = svg.append("g");
+
+    const link = svgGroup.selectAll(".link")
+      .data(links)
+      .enter()
+      .append("line")
+      .attr("class", "link")
+      .attr("stroke", "#aaa");
+
+    const node = svgGroup.selectAll(".node")
+      .data(nodes)
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .call(d3.drag()
+        .on("start", dragStart)
+        .on("drag", dragged)
+        .on("end", dragEnd));
+
+    node.append("use")
+      .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
+      .attr("width", 40)
+      .attr("height", 40)
+      .attr("x", -20)
+      .attr("y", -20);
+
+    node.append("text")
+      .text(d => d.label)
+      .attr("x", 0)
+      .attr("y", 30)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "10px");
+
+    node.on("mouseover", (event, d) => {
       tooltip.style("display", "block")
         .style("left", event.pageX + 10 + "px")
         .style("top", event.pageY + "px")
-        .html(`<strong>${d.label}</strong><br>Type: ${d.type}`);
-    })
-    .on("mouseout", () => tooltip.style("display", "none"))
-    .on("dblclick", (event, d) => {
-      const base = "https://find-and-update.company-information.service.gov.uk";
-      if (d.id.startsWith("company-")) {
-        const num = d.id.split("-")[1];
-        window.open(`${base}/company/${num}`, "_blank");
-      }
-    })
-    .call(d3.drag()
-      .on("start", dragStart)
-      .on("drag", dragMove)
-      .on("end", dragEnd));
+        .html(`<strong>${d.label}</strong><br>${d.type}`);
+    });
 
-  zoomGroup.append("g")
-    .selectAll("text")
-    .data(nodes)
-    .enter()
-    .append("text")
-    .text(d => d.label)
-    .attr("font-size", "11px")
-    .attr("x", 12)
-    .attr("y", 4)
-    .attr("fill", "#333");
+    node.on("mouseout", () => {
+      tooltip.style("display", "none");
+    });
 
-  simulation.on("tick", () => {
-    zoomGroup.selectAll("line")
-      .attr("x1", d => d.source.x)
-      .attr("y1", d => d.source.y)
-      .attr("x2
+    simulation.nodes(nodes).on("tick", () => {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+
+    simulation.force("link").links(links);
+  }
+
+  function dragStart(event, d) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+  }
+
+  function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+  }
+
+  function dragEnd(event, d) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+  }
+
+  window.lookupCompany = lookupCompany;
+});
