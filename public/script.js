@@ -5,17 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const retryContainer = document.getElementById("retryContainer");
   const statusMessage = document.getElementById("statusMessage");
 
-  const width = +svg.attr("width");
-  const height = +svg.attr("height");
-
-  const simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(d => d.id).distance(150))
-    .force("charge", d3.forceManyBody().strength(-400))
-    .force("center", d3.forceCenter(width / 2, height / 2));
-
   function lookupCompany() {
     const companyNumber = document.getElementById("companyInput").value.trim();
-    const depth = document.getElementById("depthSelect").value;
     if (!companyNumber) return;
 
     loader.style.display = "block";
@@ -23,108 +14,103 @@ document.addEventListener("DOMContentLoaded", () => {
     retryContainer.style.display = "none";
     svg.selectAll("*").remove();
 
-    fetch(`/api/network?companyNumber=${companyNumber}&depth=${depth}`)
-      .then(response => response.json())
+    fetch(`/api/network?companyNumber=${companyNumber}`)
+      .then(res => res.json())
       .then(data => {
         loader.style.display = "none";
-        drawGraph(data);
+        drawStructuredGraph(data);
       })
       .catch(err => {
         loader.style.display = "none";
-        statusMessage.textContent = "❌ Failed to load data. Check company number or try again.";
+        statusMessage.textContent = "❌ Failed to load data.";
         retryContainer.style.display = "block";
         console.error(err);
       });
   }
 
-  function drawGraph(data) {
-    const links = data.links;
-    const nodes = data.nodes;
+  function drawStructuredGraph(data) {
+    const nodeGroups = {
+      owner: { x: 150, yStart: 100 },
+      shareholder: { x: 350, yStart: 100 },
+      company: { x: 550, yStart: 100 },
+      contact: { x: 750, yStart: 100 }
+    };
 
-    const svgGroup = svg.append("g"); // ✅ Declare before using it anywhere
+    const svgGroup = svg.append("g");
 
-    const zoom = d3.zoom().on("zoom", (event) => {
-      svgGroup.attr("transform", event.transform);
+    const nodeMap = {};
+    const verticalSpacing = 100;
+
+    data.nodes.forEach((node, i) => {
+      const group = nodeGroups[node.role] || nodeGroups.company;
+      const y = group.yStart + verticalSpacing * i;
+      node.x = group.x;
+      node.y = y;
+      nodeMap[node.id] = node;
     });
-    svg.call(zoom);
-
-    const svgDefs = svg.append("defs");
-    const shadow = svgDefs.append("filter").attr("id", "dropShadow").attr("height", "130%");
-    shadow.append("feDropShadow")
-      .attr("dx", "2").attr("dy", "2").attr("stdDeviation", "3").attr("flood-color", "#ccc");
 
     const link = svgGroup.selectAll(".link")
-      .data(links)
+      .data(data.links)
       .enter()
-      .append("path")
+      .append("line")
       .attr("class", "link")
-      .attr("fill", "none")
-      .attr("stroke", "#ccc")
-      .attr("stroke-width", 2);
+      .attr("x1", d => nodeMap[d.source].x)
+      .attr("y1", d => nodeMap[d.source].y)
+      .attr("x2", d => nodeMap[d.target].x)
+      .attr("y2", d => nodeMap[d.target].y);
+
+    svgGroup.selectAll(".link-label")
+      .data(data.links)
+      .enter()
+      .append("text")
+      .attr("class", "link-label")
+      .attr("x", d => (nodeMap[d.source].x + nodeMap[d.target].x) / 2)
+      .attr("y", d => (nodeMap[d.source].y + nodeMap[d.target].y) / 2 - 5)
+      .text(d => `${d.percentage || ''}%`);
 
     const node = svgGroup.selectAll(".node")
-      .data(nodes)
+      .data(data.nodes)
       .enter()
       .append("g")
       .attr("class", "node")
-      .call(d3.drag()
-        .on("start", dragStart)
-        .on("drag", dragged)
-        .on("end", dragEnd));
+      .attr("transform", d => `translate(${d.x},${d.y})`);
 
-    node.append("use")
-      .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
-      .attr("width", 40).attr("height", 40)
-      .attr("x", -20).attr("y", -20);
+    node.append(d => {
+      return document.createElementNS("http://www.w3.org/2000/svg",
+        d.type === "company" ? "rect" : "circle");
+    })
+      .attr("width", 60)
+      .attr("height", 40)
+      .attr("r", d => d.type !== "company" ? 20 : null)
+      .attr("x", d => d.type === "company" ? -30 : null)
+      .attr("y", d => d.type === "company" ? -20 : null)
+      .attr("fill", d => d.type === "company" ? "#cfe6fc" : "#fdd76c");
 
     node.append("text")
-      .text(d => d.label)
-      .attr("x", 0).attr("y", 30)
-      .attr("text-anchor", "middle").attr("font-size", "12px");
+      .attr("y", d => d.type === "company" ? 5 : 0)
+      .text(d => d.label);
+
+    node.append("text")
+      .attr("y", d => d.type === "company" ? 20 : 15)
+      .attr("font-size", "10px")
+      .attr("fill", "#666")
+      .text(d => d.role || d.status || '');
 
     node.on("mouseover", (event, d) => {
       tooltip.style("display", "block")
-        .style("left", event.pageX + 15 + "px")
+        .style("left", event.pageX + 10 + "px")
         .style("top", event.pageY + "px")
         .html(`
-          <div><strong>${d.label}</strong></div>
-          <div>${d.type}</div>
-          ${d.role ? `<div><em>Role:</em> ${d.role}</div>` : ""}
+          <strong>${d.label}</strong><br/>
+          ${d.role ? `<em>${d.role}</em><br/>` : ""}
+          ${d.status ? `Status: ${d.status}<br/>` : ""}
         `);
     });
 
     node.on("mouseout", () => {
       tooltip.style("display", "none");
     });
-
-    simulation.nodes(nodes).on("tick", () => {
-      link.attr("d", d => {
-        const dx = d.target.x - d.source.x;
-        const dy = d.target.y - d.source.y;
-        const dr = Math.sqrt(dx * dx + dy * dy);
-        return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
-      });
-
-      node.attr("transform", d => `translate(${d.x},${d.y})`);
-    });
-
-    simulation.force("link").links(links);
   }
 
-  function dragStart(event, d) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x; d.fy = d.y;
-  }
-
-  function dragged(event, d) {
-    d.fx = event.x; d.fy = event.y;
-  }
-
-  function dragEnd(event, d) {
-    if (!event.active) simulation.alphaTarget(0);
-    d.fx = null; d.fy = null;
-  }
-
-  // ✅ Expose lookupCompany globally for HTML button
   window.lookupCompany = lookupCompany;
 });

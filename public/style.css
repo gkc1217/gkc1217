@@ -1,83 +1,64 @@
 body {
   font-family: 'Segoe UI', sans-serif;
-  background: linear-gradient(to bottom, #f2f4f7, #dbe2eb);
-  margin: 0;
+  background: #f4f6f9;
   padding: 20px;
   color: #333;
 }
 
 h1 {
-  font-size: 24px;
   color: #0078D4;
+  margin-bottom: 20px;
 }
 
-input, select, button {
-  padding: 10px 12px;
-  font-size: 14px;
+input, button {
+  padding: 10px;
   margin-right: 10px;
-  border-radius: 6px;
+  font-size: 14px;
+  border-radius: 5px;
   border: 1px solid #ccc;
-  background-color: white;
 }
 
 button {
   background-color: #0078D4;
   color: white;
   border: none;
-  cursor: pointer;
 }
 
 svg {
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
   background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
 }
 
-.node use {
-  filter: url(#dropShadow);
+.node rect, .node circle {
+  stroke: #333;
+  stroke-width: 1px;
 }
 
 .node text {
-  fill: #333;
-  font-weight: bold;
   font-size: 12px;
+  text-anchor: middle;
+  fill: #333;
 }
 
 .link {
-  stroke: #ccc;
+  stroke: #888;
   stroke-width: 2px;
+}
+
+.link-label {
+  fill: #555;
+  font-size: 12px;
+  text-anchor: middle;
 }
 
 #tooltip {
   position: absolute;
   display: none;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   padding: 10px;
   font-size: 13px;
-  line-height: 1.4;
-  pointer-events: none;
-  max-width: 240px;
   color: #333;
-}
-
-#loader {
-  display: none;
-  font-weight: bold;
-  color: #0078D4;
-  margin-top: 10px;
-}
-
-#retryContainer {
-  display: none;
-  margin-top: 10px;
-}
-
-#retryContainer button {
-  padding: 10px;
-  background-color: #ff6a00;
-  color: white;
-  border: none;
-  border-radius: 6px;
 }
