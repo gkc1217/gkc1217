@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const width = +svg.attr("width");
   const height = +svg.attr("height");
+
   const simulation = d3.forceSimulation()
     .force("link", d3.forceLink().id(d => d.id).distance(150))
     .force("charge", d3.forceManyBody().strength(-400))
@@ -36,151 +37,94 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-function drawGraph(data) {
-  const links = data.links;
-  const nodes = data.nodes;
+  function drawGraph(data) {
+    const links = data.links;
+    const nodes = data.nodes;
 
-  // ✅ Declare svgGroup FIRST
-  const svgGroup = svg.append("g");
+    const svgGroup = svg.append("g"); // ✅ Declare before using it anywhere
 
-  // 🧭 Apply zoom AFTER svgGroup is defined
-  const zoom = d3.zoom().on("zoom", (event) => {
-    svgGroup.attr("transform", event.transform);
-  });
-  svg.call(zoom);
+    const zoom = d3.zoom().on("zoom", (event) => {
+      svgGroup.attr("transform", event.transform);
+    });
+    svg.call(zoom);
 
-  // ⬇️ Now continue safely with node/link rendering
-  const svgDefs = svg.append("defs");
-  svgDefs.append("filter")
-    .attr("id", "dropShadow")
-    .attr("height", "130%")
-    .append("feDropShadow")
-    .attr("dx", "2")
-    .attr("dy", "2")
-    .attr("stdDeviation", "3")
-    .attr("flood-color", "#ccc");
+    const svgDefs = svg.append("defs");
+    const shadow = svgDefs.append("filter").attr("id", "dropShadow").attr("height", "130%");
+    shadow.append("feDropShadow")
+      .attr("dx", "2").attr("dy", "2").attr("stdDeviation", "3").attr("flood-color", "#ccc");
 
-  const link = svgGroup.selectAll(".link")
-    .data(links)
-    .enter()
-    .append("path")
-    .attr("class", "link")
-    .attr("fill", "none")
-    .attr("stroke", "#ccc")
-    .attr("stroke-width", 2);
+    const link = svgGroup.selectAll(".link")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("class", "link")
+      .attr("fill", "none")
+      .attr("stroke", "#ccc")
+      .attr("stroke-width", 2);
 
-  const node = svgGroup.selectAll(".node")
-    .data(nodes)
-    .enter()
-    .append("g")
-    .attr("class", "node")
-    .call(d3.drag()
-      .on("start", dragStart)
-      .on("drag", dragged)
-      .on("end", dragEnd));
+    const node = svgGroup.selectAll(".node")
+      .data(nodes)
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .call(d3.drag()
+        .on("start", dragStart)
+        .on("drag", dragged)
+        .on("end", dragEnd));
 
-  node.append("use")
-    .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
-    .attr("width", 40)
-    .attr("height", 40)
-    .attr("x", -20)
-    .attr("y", -20);
+    node.append("use")
+      .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
+      .attr("width", 40).attr("height", 40)
+      .attr("x", -20).attr("y", -20);
 
-  node.append("text")
-    .text(d => d.label)
-    .attr("x", 0)
-    .attr("y", 30)
-    .attr("text-anchor", "middle")
-    .attr("font-size", "12px");
+    node.append("text")
+      .text(d => d.label)
+      .attr("x", 0).attr("y", 30)
+      .attr("text-anchor", "middle").attr("font-size", "12px");
 
-  simulation.nodes(nodes).on("tick", () => {
-    link.attr("d", d => {
-      const dx = d.target.x - d.source.x;
-      const dy = d.target.y - d.source.y;
-      const dr = Math.sqrt(dx * dx + dy * dy);
-      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+    node.on("mouseover", (event, d) => {
+      tooltip.style("display", "block")
+        .style("left", event.pageX + 15 + "px")
+        .style("top", event.pageY + "px")
+        .html(`
+          <div><strong>${d.label}</strong></div>
+          <div>${d.type}</div>
+          ${d.role ? `<div><em>Role:</em> ${d.role}</div>` : ""}
+        `);
     });
 
-    node.attr("transform", d => `translate(${d.x},${d.y})`);
-  });
+    node.on("mouseout", () => {
+      tooltip.style("display", "none");
+    });
 
-  simulation.force("link").links(links);
+    simulation.nodes(nodes).on("tick", () => {
+      link.attr("d", d => {
+        const dx = d.target.x - d.source.x;
+        const dy = d.target.y - d.source.y;
+        const dr = Math.sqrt(dx * dx + dy * dy);
+        return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+      });
 
-  node.on("mouseover", (event, d) => {
-    tooltip.style("display", "block")
-      .style("left", event.pageX + 15 + "px")
-      .style("top", event.pageY + "px")
-      .html(`
-        <div><strong>${d.label}</strong></div>
-        <div>${d.type}</div>
-        ${d.role ? `<div><em>Role:</em> ${d.role}</div>` : ""}
-      `);
-  });
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
 
-  node.on("mouseout", () => {
-    tooltip.style("display", "none");
-  });
-}
+    simulation.force("link").links(links);
+  }
 
   function dragStart(event, d) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x;
-    d.fy = d.y;
+    d.fx = d.x; d.fy = d.y;
   }
 
   function dragged(event, d) {
-    d.fx = event.x;
-    d.fy = event.y;
+    d.fx = event.x; d.fy = event.y;
   }
 
   function dragEnd(event, d) {
     if (!event.active) simulation.alphaTarget(0);
-    d.fx = null;
-    d.fy = null;
+    d.fx = null; d.fy = null;
   }
-const svgDefs = svg.append("defs");
 
-// Drop shadow filter for nodes
-svgDefs.append("filter")
-  .attr("id", "dropShadow")
-  .attr("height", "130%")
-  .append("feDropShadow")
-  .attr("dx", "2")
-  .attr("dy", "2")
-  .attr("stdDeviation", "3")
-  .attr("flood-color", "#ccc");
-
-// Curved link paths
-const link = svgGroup.selectAll(".link")
-  .data(links)
-  .enter()
-  .append("path")
-  .attr("class", "link")
-  .attr("fill", "none")
-  .attr("stroke", "#ccc")
-  .attr("stroke-width", 2);
-
-simulation.on("tick", () => {
-  link.attr("d", d => {
-    const dx = d.target.x - d.source.x;
-    const dy = d.target.y - d.source.y;
-    const dr = Math.sqrt(dx * dx + dy * dy);
-    return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
-  });
-
-  node.attr("transform", d => `translate(${d.x},${d.y})`);
-});
-
-// Updated tooltip styling
-node.on("mouseover", (event, d) => {
-  tooltip.style("display", "block")
-    .style("left", event.pageX + 15 + "px")
-    .style("top", event.pageY + "px")
-    .html(`
-      <div><strong>${d.label}</strong></div>
-      <div>${d.type}</div>
-      ${d.role ? `<div><em>Role:</em> ${d.role}</div>` : ""}
-    `);
-});
+  // ✅ Expose lookupCompany globally for HTML button
   window.lookupCompany = lookupCompany;
 });
