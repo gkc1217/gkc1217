@@ -36,18 +36,20 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
- function drawGraph(data) {
+function drawGraph(data) {
   const links = data.links;
   const nodes = data.nodes;
 
+  // ✅ Declare svgGroup FIRST
+  const svgGroup = svg.append("g");
+
+  // 🧭 Apply zoom AFTER svgGroup is defined
   const zoom = d3.zoom().on("zoom", (event) => {
     svgGroup.attr("transform", event.transform);
   });
   svg.call(zoom);
 
-  // ✅ Define svgGroup before using it
-  const svgGroup = svg.append("g");
-
+  // ⬇️ Now continue safely with node/link rendering
   const svgDefs = svg.append("defs");
   svgDefs.append("filter")
     .attr("id", "dropShadow")
@@ -58,7 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .attr("stdDeviation", "3")
     .attr("flood-color", "#ccc");
 
-  // Curved link paths
   const link = svgGroup.selectAll(".link")
     .data(links)
     .enter()
