@@ -36,70 +36,90 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  function drawGraph(data) {
-    const links = data.links;
-    const nodes = data.nodes;
+ function drawGraph(data) {
+  const links = data.links;
+  const nodes = data.nodes;
 
-    const zoom = d3.zoom().on("zoom", (event) => {
-      svgGroup.attr("transform", event.transform);
+  const zoom = d3.zoom().on("zoom", (event) => {
+    svgGroup.attr("transform", event.transform);
+  });
+  svg.call(zoom);
+
+  // ✅ Define svgGroup before using it
+  const svgGroup = svg.append("g");
+
+  const svgDefs = svg.append("defs");
+  svgDefs.append("filter")
+    .attr("id", "dropShadow")
+    .attr("height", "130%")
+    .append("feDropShadow")
+    .attr("dx", "2")
+    .attr("dy", "2")
+    .attr("stdDeviation", "3")
+    .attr("flood-color", "#ccc");
+
+  // Curved link paths
+  const link = svgGroup.selectAll(".link")
+    .data(links)
+    .enter()
+    .append("path")
+    .attr("class", "link")
+    .attr("fill", "none")
+    .attr("stroke", "#ccc")
+    .attr("stroke-width", 2);
+
+  const node = svgGroup.selectAll(".node")
+    .data(nodes)
+    .enter()
+    .append("g")
+    .attr("class", "node")
+    .call(d3.drag()
+      .on("start", dragStart)
+      .on("drag", dragged)
+      .on("end", dragEnd));
+
+  node.append("use")
+    .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
+    .attr("width", 40)
+    .attr("height", 40)
+    .attr("x", -20)
+    .attr("y", -20);
+
+  node.append("text")
+    .text(d => d.label)
+    .attr("x", 0)
+    .attr("y", 30)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "12px");
+
+  simulation.nodes(nodes).on("tick", () => {
+    link.attr("d", d => {
+      const dx = d.target.x - d.source.x;
+      const dy = d.target.y - d.source.y;
+      const dr = Math.sqrt(dx * dx + dy * dy);
+      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
     });
-    svg.call(zoom);
 
-    const svgGroup = svg.append("g");
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
 
-    const link = svgGroup.selectAll(".link")
-      .data(links)
-      .enter()
-      .append("line")
-      .attr("class", "link")
-      .attr("stroke", "#aaa");
+  simulation.force("link").links(links);
 
-    const node = svgGroup.selectAll(".node")
-      .data(nodes)
-      .enter()
-      .append("g")
-      .attr("class", "node")
-      .call(d3.drag()
-        .on("start", dragStart)
-        .on("drag", dragged)
-        .on("end", dragEnd));
+  node.on("mouseover", (event, d) => {
+    tooltip.style("display", "block")
+      .style("left", event.pageX + 15 + "px")
+      .style("top", event.pageY + "px")
+      .html(`
+        <div><strong>${d.label}</strong></div>
+        <div>${d.type}</div>
+        ${d.role ? `<div><em>Role:</em> ${d.role}</div>` : ""}
+      `);
+  });
 
-    node.append("use")
-      .attr("href", d => d.type === "company" ? "#companyIcon" : "#personIcon")
-      .attr("width", 40)
-      .attr("height", 40)
-      .attr("x", -20)
-      .attr("y", -20);
-
-    node.append("text")
-      .text(d => d.label)
-      .attr("x", 0)
-      .attr("y", 30)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "10px");
-
-    node.on("mouseover", (event, d) => {
-      tooltip.style("display", "block")
-        .style("left", event.pageX + 10 + "px")
-        .style("top", event.pageY + "px")
-        .html(`<strong>${d.label}</strong><br>${d.type}`);
-    });
-
-    node.on("mouseout", () => {
-      tooltip.style("display", "none");
-    });
-
-    simulation.nodes(nodes).on("tick", () => {
-      link
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
-      node.attr("transform", d => `translate(${d.x},${d.y})`);
-    });
-
-    simulation.force("link").links(links);
-  }
+  node.on("mouseout", () => {
+    tooltip.style("display", "none");
+  });
+}
 
   function dragStart(event, d) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
