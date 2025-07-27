@@ -1,64 +1,46 @@
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f4f6f9;
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+#graph-container {
+  overflow: visible;
   padding: 20px;
-  color: #333;
-}
-
-h1 {
-  color: #0078D4;
-  margin-bottom: 20px;
-}
-
-input, button {
-  padding: 10px;
-  margin-right: 10px;
-  font-size: 14px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-button {
-  background-color: #0078D4;
-  color: white;
-  border: none;
 }
 
 svg {
-  background-color: white;
+  background-color: #fafafa;
   border: 1px solid #ccc;
-  border-radius: 10px;
 }
 
-.node rect, .node circle {
+.officer {
+  fill: gold;
   stroke: #333;
-  stroke-width: 1px;
+  stroke-width: 2;
 }
 
-.node text {
+.company {
+  fill: #e0f0ff;
+  stroke: #336699;
+  stroke-width: 2;
+}
+
+.company.dissolved {
+  fill: #f0d0d0;
+  stroke: #993333;
+}
+
+.node-label {
+  font-weight: bold;
+}
+
+.status-label {
   font-size: 12px;
-  text-anchor: middle;
-  fill: #333;
-}
-
-.link {
-  stroke: #888;
-  stroke-width: 2px;
+  fill: #555;
 }
 
 .link-label {
-  fill: #555;
-  font-size: 12px;
-  text-anchor: middle;
-}
-
-#tooltip {
-  position: absolute;
-  display: none;
-  background: white;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  padding: 10px;
   font-size: 13px;
-  color: #333;
+  fill: #444;
 }
