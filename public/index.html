@@ -1,25 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Ownership Network Diagram</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Ownership Graph</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>📊 Ownership Network</h1>
-  <input type="text" id="companyInput" placeholder="Enter Company Number" value="07946822"/>
-  <button onclick="lookupCompany()">Generate Diagram</button>
-  <div id="statusMessage"></div>
-  <div id="loader">⏳ Loading...</div>
-  <div id="retryContainer">
-    <button onclick="lookupCompany()">Retry</button>
+  <div id="input-container">
+    <input type="text" id="company-id" placeholder="Enter Company ID" value="07946822"/>
+    <button id="fetch-data">Generate Graph</button>
   </div>
- <div id="graph-container">
+
+  <div id="graph-container">
     <svg id="ownership-graph" width="1400" height="600" viewBox="0 0 1400 600" preserveAspectRatio="xMidYMid meet"></svg>
   </div>
 
-  <div id="tooltip"></div>
   <script src="script.js"></script>
 </body>
 </html>

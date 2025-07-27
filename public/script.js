@@ -1,116 +1,100 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const svg = d3.select("#networkGraph");
-  const tooltip = d3.select("#tooltip");
-  const loader = document.getElementById("loader");
-  const retryContainer = document.getElementById("retryContainer");
-  const statusMessage = document.getElementById("statusMessage");
+const svg = d3.select("#ownership-graph");
+const input = document.getElementById("company-id");
+const button = document.getElementById("fetch-data");
 
-  function lookupCompany() {
-    const companyNumber = document.getElementById("companyInput").value.trim();
-    if (!companyNumber) return;
+// Sample dummy graph generator — replace with dynamic API call
+function generateGraph(companyId) {
+  svg.selectAll("*").remove();
 
-    loader.style.display = "block";
-    statusMessage.textContent = "";
-    retryContainer.style.display = "none";
-    svg.selectAll("*").remove();
+  const nodes = [
+    { id: "Officer: Jane Smith", type: "officer", x: 100, y: 200, role: "Director" },
+    { id: `Company: ${companyId}`, type: "company", x: 400, y: 200, status: "Active" },
+    { id: "Subsidiary: LTH UNIVERSITIES LIMITED", type: "company", x: 700, y: 200, status: "Active" }
+  ];
 
-    fetch(`/api/network?companyNumber=${companyNumber}`)
-      .then(res => res.json())
-      .then(data => {
-        loader.style.display = "none";
-        drawStructuredGraph(data);
-      })
-      .catch(err => {
-        loader.style.display = "none";
-        statusMessage.textContent = "❌ Failed to load data.";
-        retryContainer.style.display = "block";
-        console.error(err);
-      });
-  }
+  const links = [
+    { source: nodes[0], target: nodes[1], ownership: "100%" },
+    { source: nodes[1], target: nodes[2], ownership: "75%" }
+  ];
 
-  function drawStructuredGraph(data) {
-    const nodeGroups = {
-      owner: { x: 150, yStart: 100 },
-      shareholder: { x: 350, yStart: 100 },
-      company: { x: 550, yStart: 100 },
-      contact: { x: 750, yStart: 100 }
-    };
+  svg.append("defs").append("marker")
+    .attr("id", "arrowhead")
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 12)
+    .attr("refY", 0)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M0,-5L10,0L0,5")
+    .attr("fill", "#333");
 
-    const svgGroup = svg.append("g");
+  svg.selectAll("line.link")
+    .data(links)
+    .enter()
+    .append("line")
+    .attr("class", "link")
+    .attr("x1", d => d.source.x)
+    .attr("y1", d => d.source.y)
+    .attr("x2", d => d.target.x)
+    .attr("y2", d => d.target.y)
+    .attr("stroke", "#888")
+    .attr("stroke-width", 2)
+    .attr("marker-end", "url(#arrowhead)");
 
-    const nodeMap = {};
-    const verticalSpacing = 100;
+  svg.selectAll("text.link-label")
+    .data(links)
+    .enter()
+    .append("text")
+    .attr("x", d => (d.source.x + d.target.x) / 2)
+    .attr("y", d => (d.source.y + d.target.y) / 2 - 10)
+    .attr("text-anchor", "middle")
+    .attr("class", "link-label")
+    .text(d => d.ownership);
 
-    data.nodes.forEach((node, i) => {
-      const group = nodeGroups[node.role] || nodeGroups.company;
-      const y = group.yStart + verticalSpacing * i;
-      node.x = group.x;
-      node.y = y;
-      nodeMap[node.id] = node;
-    });
+  svg.selectAll("circle.officer")
+    .data(nodes.filter(n => n.type === "officer"))
+    .enter()
+    .append("circle")
+    .attr("cx", d => d.x)
+    .attr("cy", d => d.y)
+    .attr("r", 30)
+    .attr("class", "officer");
 
-    const link = svgGroup.selectAll(".link")
-      .data(data.links)
-      .enter()
-      .append("line")
-      .attr("class", "link")
-      .attr("x1", d => nodeMap[d.source].x)
-      .attr("y1", d => nodeMap[d.source].y)
-      .attr("x2", d => nodeMap[d.target].x)
-      .attr("y2", d => nodeMap[d.target].y);
+  svg.selectAll("rect.company")
+    .data(nodes.filter(n => n.type === "company"))
+    .enter()
+    .append("rect")
+    .attr("x", d => d.x - 60)
+    .attr("y", d => d.y - 30)
+    .attr("width", 120)
+    .attr("height", 60)
+    .attr("rx", 10)
+    .attr("class", d => `company ${d.status.toLowerCase()}`);
 
-    svgGroup.selectAll(".link-label")
-      .data(data.links)
-      .enter()
-      .append("text")
-      .attr("class", "link-label")
-      .attr("x", d => (nodeMap[d.source].x + nodeMap[d.target].x) / 2)
-      .attr("y", d => (nodeMap[d.source].y + nodeMap[d.target].y) / 2 - 5)
-      .text(d => `${d.percentage || ''}%`);
+  svg.selectAll("text.label")
+    .data(nodes)
+    .enter()
+    .append("text")
+    .attr("x", d => d.x)
+    .attr("y", d => d.y + 45)
+    .attr("text-anchor", "middle")
+    .attr("class", "node-label")
+    .text(d => d.id.split(": ")[1]);
 
-    const node = svgGroup.selectAll(".node")
-      .data(data.nodes)
-      .enter()
-      .append("g")
-      .attr("class", "node")
-      .attr("transform", d => `translate(${d.x},${d.y})`);
+  svg.selectAll("text.status")
+    .data(nodes)
+    .enter()
+    .append("text")
+    .attr("x", d => d.x)
+    .attr("y", d => d.y + 60)
+    .attr("text-anchor", "middle")
+    .attr("class", "status-label")
+    .text(d => d.role || d.status);
+}
 
-    node.append(d => {
-      return document.createElementNS("http://www.w3.org/2000/svg",
-        d.type === "company" ? "rect" : "circle");
-    })
-      .attr("width", 60)
-      .attr("height", 40)
-      .attr("r", d => d.type !== "company" ? 20 : null)
-      .attr("x", d => d.type === "company" ? -30 : null)
-      .attr("y", d => d.type === "company" ? -20 : null)
-      .attr("fill", d => d.type === "company" ? "#cfe6fc" : "#fdd76c");
-
-    node.append("text")
-      .attr("y", d => d.type === "company" ? 5 : 0)
-      .text(d => d.label);
-
-    node.append("text")
-      .attr("y", d => d.type === "company" ? 20 : 15)
-      .attr("font-size", "10px")
-      .attr("fill", "#666")
-      .text(d => d.role || d.status || '');
-
-    node.on("mouseover", (event, d) => {
-      tooltip.style("display", "block")
-        .style("left", event.pageX + 10 + "px")
-        .style("top", event.pageY + "px")
-        .html(`
-          <strong>${d.label}</strong><br/>
-          ${d.role ? `<em>${d.role}</em><br/>` : ""}
-          ${d.status ? `Status: ${d.status}<br/>` : ""}
-        `);
-    });
-
-    node.on("mouseout", () => {
-      tooltip.style("display", "none");
-    });
-  }
-
-  window.lookupCompany = lookupCompany;
+// Hook up button click
+button.addEventListener("click", () => {
+  const companyId = input.value.trim();
+  if (companyId) generateGraph(companyId);
 });

@@ -4,6 +4,31 @@ body {
   padding: 0;
 }
 
+#input-container {
+  padding: 20px;
+  background-color: #f8f8f8;
+  display: flex;
+  gap: 10px;
+}
+
+#company-id {
+  width: 300px;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+}
+
+#fetch-data {
+  padding: 8px 12px;
+  font-size: 16px;
+  background-color: #336699;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 #graph-container {
   overflow: visible;
   padding: 20px;
