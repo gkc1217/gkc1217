@@ -1,9 +1,11 @@
 function lookupCompany() {
   const companyNumber = document.getElementById("companyInput").value.trim();
+  const depth = parseInt(document.getElementById("depthSelect").value || "2", 10);
   if (!companyNumber) return;
+
   setUIState("loading");
 
-  fetch(`/api/network?companyNumber=${companyNumber}`)
+  fetch(`/api/network?companyNumber=${companyNumber}&depth=${depth}`)
     .then(res => res.json())
     .then(data => {
       if (!Array.isArray(data.nodes) || !Array.isArray(data.links)) {
@@ -21,7 +23,7 @@ function lookupCompany() {
         <strong>${companyCount}</strong> companies and <strong>${officerCount}</strong> officers linked.
       `;
 
-      drawNetwork(data.nodes, data.links);
+      drawNetwork(data.nodes, data.links, companyNumber);
     })
     .catch(err => {
       console.error("Network fetch failed:", err);
@@ -39,7 +41,7 @@ function setUIState(state) {
   }
 }
 
-function drawNetwork(nodes, links) {
+function drawNetwork(nodes, links, companyNumber) {
   const svg = d3.select("#networkGraph");
   svg.selectAll("g").remove();
   const tooltip = d3.select("#tooltip");
@@ -48,9 +50,15 @@ function drawNetwork(nodes, links) {
   svg.call(d3.zoom().scaleExtent([0.5, 2]).on("zoom", e => zoomGroup.attr("transform", e.transform)));
 
   const simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(120))
+    .force("link", d3.forceLink(links).id(d => d.id).distance(150))
     .force("charge", d3.forceManyBody().strength(-300))
     .force("center", d3.forceCenter(400, 300));
+
+  const mainCompany = nodes.find(n => n.id === `company-${companyNumber}`);
+  if (mainCompany) {
+    mainCompany.fx = 400;
+    mainCompany.fy = 550;
+  }
 
   zoomGroup.append("g")
     .selectAll("line")
@@ -99,41 +107,9 @@ function drawNetwork(nodes, links) {
     .attr("x", 12)
     .attr("y", 4)
     .attr("fill", "#333");
-const mainCompany = nodes.find(n => n.id === `company-${document.getElementById("companyInput").value.trim()}`);
-if (mainCompany) {
-  mainCompany.fx = 400; // X center
-  mainCompany.fy = 550; // Bottom of the graph
-}
+
   simulation.on("tick", () => {
     zoomGroup.selectAll("line")
       .attr("x1", d => d.source.x)
       .attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x)
-      .attr("y2", d => d.target.y);
-
-    zoomGroup.selectAll("use")
-      .attr("x", d => d.x - iconSize / 2)
-      .attr("y", d => d.y - iconSize / 2);
-
-    zoomGroup.selectAll("text")
-      .attr("x", d => d.x + 12)
-      .attr("y", d => d.y + 4);
-  });
-
-  function dragStart(event) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    event.subject.fx = event.subject.x;
-    event.subject.fy = event.subject.y;
-  }
-
-  function dragMove(event) {
-    event.subject.fx = event.x;
-    event.subject.fy = event.y;
-  }
-
-  function dragEnd(event) {
-    if (!event.active) simulation.alphaTarget(0);
-    event.subject.fx = null;
-    event.subject.fy = null;
-  }
-}
+      .attr("x2

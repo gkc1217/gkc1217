@@ -1,9 +1,9 @@
 body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
+  font-family: Arial;
   background-color: #f9f9f9;
+  padding: 20px;
 }
-input, button {
+input, select, button {
   padding: 10px;
   margin-right: 10px;
 }
@@ -28,8 +28,8 @@ svg {
 }
 #loader {
   display: none;
-  color: #0078D4;
   font-weight: bold;
+  color: #0078D4;
   margin-top: 10px;
 }
 #retryContainer {

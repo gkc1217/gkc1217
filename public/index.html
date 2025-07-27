@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Company Network Explorer</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
   <h1>🔍 Company Network Explorer</h1>
-  <input type="text" id="companyInput" placeholder="Enter Company Number" value="07946822">
+
+  <input type="text" id="companyInput" placeholder="Enter Company Number" value="07946822"/>
+  <label for="depthSelect">Depth:</label>
+  <select id="depthSelect">
+    <option value="1">1</option>
+    <option value="2" selected>2</option>
+    <option value="3">3</option>
+  </select>
   <button onclick="lookupCompany()">Search</button>
 
   <div id="statusMessage"></div>
@@ -17,30 +24,23 @@
     <button onclick="lookupCompany()">🔄 Retry</button>
   </div>
 
-  <!-- Main SVG canvas -->
   <svg id="networkGraph" width="800" height="600">
     <defs>
-      <!-- 🏢 Company icon -->
-      <symbol id="companyIcon" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+      <symbol id="companyIcon" viewBox="0 0 100 100">
         <rect x="0" y="0" width="100" height="100" fill="#0078D4" />
         <rect x="20" y="20" width="25" height="25" fill="white" />
         <rect x="55" y="20" width="25" height="25" fill="white" />
         <rect x="20" y="55" width="25" height="25" fill="white" />
         <rect x="55" y="55" width="25" height="25" fill="white" />
       </symbol>
-
-      <!-- 🧑 Officer icon -->
-      <symbol id="personIcon" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+      <symbol id="personIcon" viewBox="0 0 100 100">
         <circle cx="50" cy="30" r="20" fill="#FFD700" />
         <rect x="35" y="60" width="30" height="30" fill="#FFD700" />
       </symbol>
     </defs>
   </svg>
 
-  <!-- Tooltip container -->
   <div id="tooltip"></div>
-
-  <!-- Graph logic -->
   <script src="script.js"></script>
 </body>
 </html>
