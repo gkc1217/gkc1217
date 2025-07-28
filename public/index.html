@@ -2,19 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Ownership Graph</title>
+  <title>Company Network Explorer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="input-container">
-    <input type="text" id="company-id" placeholder="Enter Company ID" value="07946822"/>
-    <button id="fetch-data">Generate Graph</button>
+  <div id="controls">
+    <input type="text" id="company-id" placeholder="Enter Company ID" />
+    <input type="number" id="depth-level" min="1" max="5" value="2" />
+    <button id="fetch-data">Explore Network</button>
+    <div id="status-msg"></div>
   </div>
 
   <div id="graph-container">
-    <svg id="ownership-graph" width="1400" height="600" viewBox="0 0 1400 600" preserveAspectRatio="xMidYMid meet"></svg>
+    <svg id="ownership-graph" width="1400" height="700" viewBox="0 0 1400 700" preserveAspectRatio="xMidYMid meet"></svg>
   </div>
 
+  <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

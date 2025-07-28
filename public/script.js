@@ -1,26 +1,26 @@
 const svg = d3.select("#ownership-graph");
-const input = document.getElementById("company-id");
-const button = document.getElementById("fetch-data");
+const zoomLayer = svg.append("g"); // Layer for zoom/pan
+const apiKey = "YOUR_API_KEY"; // Insert actual API key
+const cache = {};
 
-// Sample dummy graph generator — replace with dynamic API call
-function generateGraph(companyId) {
-  svg.selectAll("*").remove();
+function drawGraph(nodes, links) {
+  zoomLayer.selectAll("*").remove();
 
-  const nodes = [
-    { id: "Officer: Jane Smith", type: "officer", x: 100, y: 200, role: "Director" },
-    { id: `Company: ${companyId}`, type: "company", x: 400, y: 200, status: "Active" },
-    { id: "Subsidiary: LTH UNIVERSITIES LIMITED", type: "company", x: 700, y: 200, status: "Active" }
-  ];
+  const tooltip = d3.select("body")
+    .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
 
-  const links = [
-    { source: nodes[0], target: nodes[1], ownership: "100%" },
-    { source: nodes[1], target: nodes[2], ownership: "75%" }
-  ];
+  // Zoom behavior
+  svg.call(d3.zoom().on("zoom", (event) => {
+    zoomLayer.attr("transform", event.transform);
+  }));
 
+  // Arrows
   svg.append("defs").append("marker")
     .attr("id", "arrowhead")
     .attr("viewBox", "0 -5 10 10")
-    .attr("refX", 12)
+    .attr("refX", 10)
     .attr("refY", 0)
     .attr("markerWidth", 6)
     .attr("markerHeight", 6)
@@ -29,7 +29,8 @@ function generateGraph(companyId) {
     .attr("d", "M0,-5L10,0L0,5")
     .attr("fill", "#333");
 
-  svg.selectAll("line.link")
+  // Draw links
+  zoomLayer.selectAll("line.link")
     .data(links)
     .enter()
     .append("line")
@@ -42,7 +43,8 @@ function generateGraph(companyId) {
     .attr("stroke-width", 2)
     .attr("marker-end", "url(#arrowhead)");
 
-  svg.selectAll("text.link-label")
+  // Link labels
+  zoomLayer.selectAll("text.link-label")
     .data(links)
     .enter()
     .append("text")
@@ -50,51 +52,97 @@ function generateGraph(companyId) {
     .attr("y", d => (d.source.y + d.target.y) / 2 - 10)
     .attr("text-anchor", "middle")
     .attr("class", "link-label")
-    .text(d => d.ownership);
+    .text(d => d.ownership || "");
 
-  svg.selectAll("circle.officer")
-    .data(nodes.filter(n => n.type === "officer"))
-    .enter()
-    .append("circle")
-    .attr("cx", d => d.x)
-    .attr("cy", d => d.y)
-    .attr("r", 30)
-    .attr("class", "officer");
-
-  svg.selectAll("rect.company")
-    .data(nodes.filter(n => n.type === "company"))
-    .enter()
-    .append("rect")
-    .attr("x", d => d.x - 60)
-    .attr("y", d => d.y - 30)
-    .attr("width", 120)
-    .attr("height", 60)
-    .attr("rx", 10)
-    .attr("class", d => `company ${d.status.toLowerCase()}`);
-
-  svg.selectAll("text.label")
+  // Node icons and containers
+  zoomLayer.selectAll("g.node")
     .data(nodes)
     .enter()
-    .append("text")
-    .attr("x", d => d.x)
-    .attr("y", d => d.y + 45)
-    .attr("text-anchor", "middle")
-    .attr("class", "node-label")
-    .text(d => d.id.split(": ")[1]);
+    .append("g")
+    .attr("class", "node")
+    .attr("transform", d => `translate(${d.x},${d.y})`)
+    .on("mouseover", function (event, d) {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip.html(`<strong>${d.label}</strong><br>${d.tooltip}`)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(500).style("opacity", 0);
+    })
+    .each(function (d) {
+      const g = d3.select(this);
+      if (d.type === "officer") {
+        g.append("circle").attr("r", 30).attr("class", "officer");
+      } else {
+        g.append("rect").attr("x", -60).attr("y", -30)
+          .attr("width", 120).attr("height", 60)
+          .attr("rx", 10)
+          .attr("class", `company ${d.status?.toLowerCase() || 'active'}`);
+      }
 
-  svg.selectAll("text.status")
-    .data(nodes)
-    .enter()
-    .append("text")
-    .attr("x", d => d.x)
-    .attr("y", d => d.y + 60)
-    .attr("text-anchor", "middle")
-    .attr("class", "status-label")
-    .text(d => d.role || d.status);
+      // Label
+      g.append("text")
+        .attr("y", 45)
+        .attr("text-anchor", "middle")
+        .attr("class", "node-label")
+        .text(d.label);
+    });
 }
 
-// Hook up button click
-button.addEventListener("click", () => {
-  const companyId = input.value.trim();
-  if (companyId) generateGraph(companyId);
+async function fetchCompanyData(companyId, depth) {
+  const status = document.getElementById("status-msg");
+  status.textContent = "Fetching data...";
+  try {
+    if (cache[companyId]) {
+      drawGraph(cache[companyId].nodes, cache[companyId].links);
+      status.textContent = "Loaded from cache.";
+      return;
+    }
+
+    // Dummy async tree builder — replace with recursive PSC fetch logic
+    const companyRes = await fetch(`https://api.company-information.service.gov.uk/company/${companyId}`, {
+      headers: { Authorization: `Basic ${btoa(apiKey + ":")}` }
+    });
+    if (!companyRes.ok) throw new Error("Invalid Company ID");
+
+    const data = await companyRes.json();
+    const nodes = [{
+      id: companyId,
+      type: "company",
+      x: 400,
+      y: 200,
+      label: data.company_name,
+      tooltip: `Status: ${data.company_status}`,
+      status: data.company_status
+    }];
+    const links = [];
+
+    // Simulate recursive children
+    for (let i = 1; i <= depth; i++) {
+      nodes.push({
+        id: `${companyId}-sub-${i}`,
+        type: i % 2 === 0 ? "officer" : "company",
+        x: 700 + i * 100,
+        y: 200 + i * 80,
+        label: i % 2 === 0 ? `Officer ${i}` : `Subsidiary ${i}`,
+        tooltip: `Depth ${i}`,
+        status: "active"
+      });
+      links.push({ source: nodes[0], target: nodes[nodes.length - 1], ownership: `${100 - i * 10}%` });
+    }
+
+    cache[companyId] = { nodes, links };
+    drawGraph(nodes, links);
+    status.textContent = "Graph generated!";
+  } catch (err) {
+    status.textContent = "❌ " + err.message;
+    console.error(err);
+  }
+}
+
+document.getElementById("fetch-data").addEventListener("click", () => {
+  const companyId = document.getElementById("company-id").value.trim();
+  const depth = +document.getElementById("depth-level").value;
+  if (companyId) fetchCompanyData(companyId, depth);
 });
